@@ -901,7 +901,7 @@
     }
 
     try {
-      const response = await fetch('http://localhost:3000/rsvp', {
+      const response = await fetch('https://invitacion-backend.onrender.com/rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, asistentes, asiste, mensaje })
