@@ -12,16 +12,17 @@ app.use(cors());
 app.use(express.json());
 
 // 🔗 Conexión a MongoDB Atlas
-// Asegúrate de crear en Render la variable:
-// Name: MONGO_URI
-// Value: mongodb+srv://zoe:Kcm1524@cluster0.bm26fqs.mongodb.net/invitacion?retryWrites=true&w=majority
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000 // Timeout 30s
-})
-.then(() => console.log("✅ Conectado a MongoDB"))
-.catch(err => console.error("❌ Error MongoDB:", err));
+// Nota: En versiones recientes de Mongoose (6+), ya no se usan:
+// useNewUrlParser ni useUnifiedTopology. Por eso daba error.
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.error("❌ ERROR: La variable MONGO_URI no está definida en Render.");
+}
+
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("✅ Conectado exitosamente a MongoDB"))
+  .catch(err => console.error("❌ Error de conexión a MongoDB:", err.message));
 
 // 📦 Modelo de Invitado
 const Invitado = mongoose.model('Invitado', new mongoose.Schema({
@@ -34,7 +35,7 @@ const Invitado = mongoose.model('Invitado', new mongoose.Schema({
 
 // 🟢 Ruta de prueba
 app.get('/', (req, res) => {
-  res.send('🚀 Backend de invitación funcionando');
+  res.send('🚀 Backend de invitación funcionando y conectado a la base de datos');
 });
 
 // 📌 Endpoint RSVP
@@ -49,17 +50,21 @@ app.post('/rsvp', async (req, res) => {
     const nuevoInvitado = new Invitado({
       nombre,
       asistentes: Number(asistentes) || 1,
-      asiste: asiste === "true" || asiste === true,
-      mensaje
+      // Maneja tanto booleanos reales como strings "true"/"false"
+      asiste: String(asiste) === "true", 
+      mensaje: mensaje || ""
     });
 
     const doc = await nuevoInvitado.save();
-    console.log("💾 Invitado guardado:", doc);
+    console.log("💾 Invitado guardado en la nube:", doc);
 
     res.json({ ok: true, invitado: doc });
   } catch (error) {
     console.error("❌ Error en /rsvp:", error);
-    res.status(500).json({ error: "Error al guardar en MongoDB", detalles: error.message });
+    res.status(500).json({ 
+      error: "Error al guardar en MongoDB", 
+      detalles: error.message 
+    });
   }
 });
 
