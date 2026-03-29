@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // 🔗 Conexión a MongoDB Atlas
-mongoose.connect('mongodb+srv://zoe:Kcm1524@cluster0.bm26fqs.mongodb.net/?appName=Cluster0')
+mongoose.connect('mongodb+srv://zoe:Kcm1524@cluster0.bm26fqs.mongodb.net/invitacion?retryWrites=true&w=majority')
   .then(() => console.log("✅ Conectado a MongoDB"))
   .catch(err => console.log("❌ Error Mongo:", err));
 
