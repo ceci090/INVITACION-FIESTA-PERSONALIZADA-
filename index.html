@@ -888,12 +888,10 @@
 
  
   /* ── RSVP CON BACKEND ── */
-document.getElementById('rsvpForm').addEventListener('submit', async (e) => {
-  e.preventDefault(); // Evita recargar la página
-
+document.getElementById('submitBtn').addEventListener('click', async () => {
   const nombre = document.getElementById('nombre').value.trim();
-  const asistentes = Number(document.getElementById('asistentes').value) || 1;
-  const asiste = document.getElementById('asiste').value === "true";
+  const asistentesRaw = document.getElementById('asistentes').value;
+  const asisteRaw = document.getElementById('asiste').value;
   const mensaje = document.getElementById('mensaje-rsvp').value.trim();
 
   if (!nombre) {
@@ -901,6 +899,20 @@ document.getElementById('rsvpForm').addEventListener('submit', async (e) => {
     alert("Por favor ingresa tu nombre");
     return;
   }
+
+  // Convertimos asistentes a número
+  let asistentes;
+  if (asistentesRaw === "5+") {
+    asistentes = 5; // O cualquier valor que quieras para "5 o más"
+  } else {
+    asistentes = Number(asistentesRaw);
+  }
+
+  // Convertimos asistencia a booleano (solo true/false)
+  let asiste;
+  if (asisteRaw === "si") asiste = true;
+  else if (asisteRaw === "no") asiste = false;
+  else asiste = null; // para "tal-vez" o indeciso
 
   try {
     const response = await fetch('https://invitacion-fiesta-personalizada.onrender.com/rsvp', {
@@ -912,7 +924,6 @@ document.getElementById('rsvpForm').addEventListener('submit', async (e) => {
     const data = await response.json();
 
     if (data.ok) {
-      // Ocultar formulario y mostrar mensaje de éxito
       document.getElementById('rsvpForm').style.display = 'none';
       const s = document.getElementById('rsvpSuccess');
       s.style.display = 'block';
@@ -928,7 +939,6 @@ document.getElementById('rsvpForm').addEventListener('submit', async (e) => {
     alert("Error al conectar con el servidor");
   }
 });
-
   /* ── AUDIO AUTOMÁTICO (SIN BOTÓN) ── */
   const audio = document.getElementById("musica");
 
