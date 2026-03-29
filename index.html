@@ -614,7 +614,20 @@
   <p class="hero-date">30 · Mayo · 2026</p>
   <div class="scroll-hint">Desliza</div>
 </div>
+  
+<section id="rsvp" class="reveal">
+  <p class="section-label">Confirmación</p>
+  <div class="section-title">¿Nos acompañas?</div>
 
+  <div id="rsvp-form-container">
+    <div class="rsvp-form">
+        <button id="submitBtn" class="rsvp-btn">Confirmar Asistencia</button>
+    </div>
+  </div>
+
+  <div id="rsvpSuccess" style="display:none; opacity:0; transition: opacity 0.8s ease; padding: 2rem; text-align: center;">
+      </div>
+</section>
 <!-- ══ MENSAJE ══ -->
 <section id="mensaje" class="reveal">
   <p class="section-label">Un mensaje de Juliet</p>
@@ -862,7 +875,6 @@
     let current = 0;
     let timer;
 
-    // Crear puntos indicadores
     slides.forEach((_, i) => {
       const d = document.createElement('div');
       d.classList.add('dot');
@@ -878,7 +890,6 @@
       allDots.forEach((d, i) => d.classList.toggle('active', i === current));
     }
 
-    // Botones opcionales si existen en tu HTML (prev/next)
     document.getElementById('prev')?.addEventListener('click', () => { goTo(current - 1); resetTimer(); });
     document.getElementById('next')?.addEventListener('click', () => { goTo(current + 1); resetTimer(); });
 
@@ -896,7 +907,7 @@
   }, { threshold: .1 });
   revealEls.forEach(el => observer.observe(el));
 
-  /* ── 4. RSVP POR WHATSAPP (SIN ERRORES DE SERVIDOR) ── */
+  /* ── 4. RSVP POR WHATSAPP (CORREGIDO Y CON MENSAJE FINAL) ── */
   const submitBtn = document.getElementById('submitBtn');
   if (submitBtn) {
     submitBtn.addEventListener('click', (e) => {
@@ -918,26 +929,38 @@
         return;
       }
 
-      // --- CONFIGURACIÓN DE TU TELÉFONO ---
-      // Pon tu número aquí (con código de país, ej: 52 para México)
       const miTelefono = "5212321108813"; 
-
-      // Construcción del mensaje para WhatsApp
       const texto = `¡Hola! Soy *${nombre}*.\n\n${asisteStatus} a la fiesta de Juliet Zoe.\n*Invitados:* ${asistentes}\n${mensaje ? "*Mensaje:* " + mensaje : ""}`;
-      
       const urlWhatsapp = `https://wa.me/${miTelefono}?text=${encodeURIComponent(texto)}`;
 
-      // Abrir WhatsApp
+      // 1. Abrimos WhatsApp
       window.open(urlWhatsapp, '_blank');
 
-      // Mostrar mensaje de éxito en la página
-      const formContainer = document.getElementById('rsvp-form-container');
-      const successDiv = document.getElementById('rsvpSuccess');
+      // 2. Vaciamos los campos del formulario
+      nombreInput.value = "";
+      mensajeInput.value = "";
+      asistentesSelect.selectedIndex = 0;
+      asisteSelect.selectedIndex = 0;
+
+      // 3. Ocultamos el formulario y mostramos el mensaje de agradecimiento
+      const formContainer = document.getElementById('rsvp-form-container'); // El contenedor del form
+      const successDiv = document.getElementById('rsvpSuccess'); // El div con el mensaje bonito
       
       if(formContainer && successDiv) {
-        formContainer.style.display = 'none';
-        successDiv.style.display = 'block';
-        setTimeout(() => successDiv.style.opacity = '1', 50);
+        formContainer.style.transition = "opacity 0.5s ease";
+        formContainer.style.opacity = "0";
+        
+        setTimeout(() => {
+          formContainer.style.display = 'none';
+          successDiv.style.display = 'block';
+          // Personalizamos el mensaje con el nombre del invitado
+          successDiv.innerHTML = `
+            <div class="success-icon">✨</div>
+            <p>¡Gracias, ${nombre}!</p>
+            <p style="font-size: 0.9rem; margin-top: 10px;">Tu confirmación ha sido enviada por WhatsApp.<br>¡Nos hace mucha ilusión verte ahí!</p>
+          `;
+          setTimeout(() => successDiv.style.opacity = '1', 50);
+        }, 500);
       }
     });
   }
@@ -947,14 +970,9 @@
   if (audio) {
     const intentarReproducir = () => {
       audio.volume = 0.5;
-      audio.play().catch(() => {
-        console.log("El navegador bloqueó el audio, esperando interacción.");
-      });
+      audio.play().catch(() => {});
     };
-
     window.addEventListener("load", intentarReproducir);
-    
-    // Activar al primer toque si el navegador lo bloqueó al inicio
     const activarAudioManual = () => { 
       audio.play(); 
       document.removeEventListener("click", activarAudioManual);
