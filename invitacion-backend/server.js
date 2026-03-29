@@ -14,11 +14,11 @@ app.use(express.json());
 // 🔗 Conexión a MongoDB Atlas
 mongoose.connect('mongodb+srv://zoe:Kcm1524@cluster0.bm26fqs.mongodb.net/invitacion?retryWrites=true&w=majority')
   .then(() => console.log("✅ Conectado a MongoDB"))
-  .catch(err => console.log("❌ Error Mongo:", err));
+  .catch(err => console.error("❌ Error Mongo:", err));
 
 // 📦 Modelo
 const Invitado = mongoose.model('Invitado', {
-  nombre: String,
+  nombre: { type: String, required: true },
   asistentes: String,
   asiste: String,
   mensaje: String,
@@ -40,6 +40,7 @@ app.post('/rsvp', async (req, res) => {
       return res.status(400).json({ error: "El nombre es obligatorio" });
     }
 
+    // Crear nuevo documento
     const nuevo = new Invitado({
       nombre,
       asistentes,
@@ -48,15 +49,19 @@ app.post('/rsvp', async (req, res) => {
       fecha: new Date()
     });
 
-    await nuevo.save();
-
-    console.log("💾 Guardado:", nuevo);
+    // Guardar en MongoDB con try/catch interno para capturar errores de Atlas
+    await nuevo.save()
+      .then(doc => console.log("💾 Guardado:", doc))
+      .catch(err => {
+        console.error("❌ Error al guardar en Mongo:", err);
+        return res.status(500).json({ error: "Error al guardar en MongoDB", detalles: err.message });
+      });
 
     res.json({ ok: true });
 
   } catch (error) {
-    console.log("❌ Error:", error);
-    res.status(500).json({ error: "Error al guardar" });
+    console.error("❌ Error general en /rsvp:", error);
+    res.status(500).json({ error: "Error al guardar", detalles: error.message });
   }
 });
 
