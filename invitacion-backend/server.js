@@ -4,33 +4,33 @@ const cors = require('cors');
 
 const app = express();
 
-// ✅ Puerto dinámico para Render
+// Puerto dinámico (Render o local)
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
-// 🔗 Conexión a MongoDB Atlas usando variable de entorno
-// Antes de esto, en Render crea una Environment Variable:
+// 🔗 Conexión a MongoDB Atlas
+// Asegúrate de crear en Render la variable:
 // Name: MONGO_URI
 // Value: mongodb+srv://zoe:Kcm1524@cluster0.bm26fqs.mongodb.net/invitacion?retryWrites=true&w=majority
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000 // 30 segundos
+  serverSelectionTimeoutMS: 30000 // Timeout 30s
 })
 .then(() => console.log("✅ Conectado a MongoDB"))
-.catch(err => console.error("❌ Error Mongo:", err));
+.catch(err => console.error("❌ Error MongoDB:", err));
 
-// 📦 Modelo
-const Invitado = mongoose.model('Invitado', {
+// 📦 Modelo de Invitado
+const Invitado = mongoose.model('Invitado', new mongoose.Schema({
   nombre: { type: String, required: true },
-  asistentes: String,
-  asiste: String,
-  mensaje: String,
+  asistentes: { type: Number, default: 1 },
+  asiste: { type: Boolean, default: true },
+  mensaje: { type: String, default: "" },
   fecha: { type: Date, default: Date.now }
-});
+}));
 
 // 🟢 Ruta de prueba
 app.get('/', (req, res) => {
@@ -41,13 +41,22 @@ app.get('/', (req, res) => {
 app.post('/rsvp', async (req, res) => {
   try {
     const { nombre, asistentes, asiste, mensaje } = req.body;
-    if (!nombre) return res.status(400).json({ error: "El nombre es obligatorio" });
 
-    const nuevo = new Invitado({ nombre, asistentes, asiste, mensaje });
-    const doc = await nuevo.save();
-    console.log("💾 Guardado:", doc);
+    if (!nombre) {
+      return res.status(400).json({ error: "El nombre es obligatorio" });
+    }
 
-    res.json({ ok: true });
+    const nuevoInvitado = new Invitado({
+      nombre,
+      asistentes: Number(asistentes) || 1,
+      asiste: asiste === "true" || asiste === true,
+      mensaje
+    });
+
+    const doc = await nuevoInvitado.save();
+    console.log("💾 Invitado guardado:", doc);
+
+    res.json({ ok: true, invitado: doc });
   } catch (error) {
     console.error("❌ Error en /rsvp:", error);
     res.status(500).json({ error: "Error al guardar en MongoDB", detalles: error.message });
