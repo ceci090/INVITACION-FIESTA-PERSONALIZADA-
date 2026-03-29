@@ -836,132 +836,145 @@
   <p>3 Años · 30 de Mayo de 2026</p>
   <p style="margin-top:.5rem">Con todo nuestro amor ♥</p>
 </footer>
-
 <script>
-  /* ── PARTICLES ── */
+  /* ── PARTICLES (Pétalos) ── */
   const particleContainer = document.getElementById('particles');
-  for (let i = 0; i < 18; i++) {
-    const p = document.createElement('div');
-    p.classList.add('petal');
-    p.style.left = Math.random() * 100 + 'vw';
-    p.style.animationDuration = (6 + Math.random() * 10) + 's';
-    p.style.animationDelay    = (Math.random() * 10) + 's';
-    p.style.width = p.style.height = (4 + Math.random() * 6) + 'px';
-    p.style.opacity = Math.random() * .6;
-    p.style.background = Math.random() > .5 ? 'var(--gold)' : 'var(--crimson)';
-    particleContainer.appendChild(p);
+  if (particleContainer) {
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement('div');
+      p.classList.add('petal');
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.animationDuration = (6 + Math.random() * 10) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      p.style.width = p.style.height = (4 + Math.random() * 6) + 'px';
+      p.style.opacity = Math.random() * .6;
+      p.style.background = Math.random() > .5 ? 'var(--gold)' : 'var(--crimson)';
+      particleContainer.appendChild(p);
+    }
   }
 
   /* ── CAROUSEL ── */
-  const track  = document.getElementById('track');
-  const slides = track.querySelectorAll('.carousel-slide');
+  const track = document.getElementById('track');
   const dotsEl = document.getElementById('dots');
-  let current = 0, total = slides.length, timer;
+  if (track && dotsEl) {
+    const slides = track.querySelectorAll('.carousel-slide');
+    let current = 0, total = slides.length, timer;
 
-  slides.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.classList.add('dot');
-    if (i === 0) d.classList.add('active');
-    d.addEventListener('click', () => goTo(i));
-    dotsEl.appendChild(d);
-  });
+    slides.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.classList.add('dot');
+      if (i === 0) d.classList.add('active');
+      d.addEventListener('click', () => { goTo(i); resetTimer(); });
+      dotsEl.appendChild(d);
+    });
 
-  function goTo(n) {
-    current = (n + total) % total;
-    track.style.transform = `translateX(-${current * 100}%)`;
-    dotsEl.querySelectorAll('.dot').forEach((d, i) =>
-      d.classList.toggle('active', i === current));
+    function goTo(n) {
+      current = (n + total) % total;
+      track.style.transform = `translateX(-${current * 100}%)`;
+      const allDots = dotsEl.querySelectorAll('.dot');
+      allDots.forEach((d, i) => d.classList.toggle('active', i === current));
+    }
+
+    document.getElementById('prev')?.addEventListener('click', () => { goTo(current - 1); resetTimer(); });
+    document.getElementById('next')?.addEventListener('click', () => { goTo(current + 1); resetTimer(); });
+
+    function resetTimer() { 
+      clearInterval(timer); 
+      timer = setInterval(() => goTo(current + 1), 4000); 
+    }
+    timer = setInterval(() => goTo(current + 1), 4000);
   }
 
-  document.getElementById('prev').addEventListener('click', () => { goTo(current - 1); resetTimer(); });
-  document.getElementById('next').addEventListener('click', () => { goTo(current + 1); resetTimer(); });
-
-  function resetTimer() { clearInterval(timer); timer = setInterval(() => goTo(current + 1), 4000); }
-  timer = setInterval(() => goTo(current + 1), 4000);
-
-  /* ── REVEAL ── */
+  /* ── REVEAL (Aparición al hacer scroll) ── */
   const revealEls = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
   }, { threshold: .1 });
   revealEls.forEach(el => observer.observe(el));
 
- 
-  /* ── RSVP CON BACKEND ── */
-document.getElementById('submitBtn').addEventListener('click', async () => {
-  const nombre = document.getElementById('nombre').value.trim();
-  const asistentesRaw = document.getElementById('asistentes').value;
-  const asisteRaw = document.getElementById('asiste').value;
-  const mensaje = document.getElementById('mensaje-rsvp').value.trim();
+  /* ── RSVP CON BACKEND (CORREGIDO) ── */
+  const submitBtn = document.getElementById('submitBtn');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async (e) => {
+      e.preventDefault(); // Evita recargas accidentales
 
-  if (!nombre) {
-    document.getElementById('nombre').focus();
-    alert("Por favor ingresa tu nombre");
-    return;
-  }
+      const nombreInput = document.getElementById('nombre');
+      const asistentesSelect = document.getElementById('asistentes');
+      const asisteSelect = document.getElementById('asiste');
+      const mensajeInput = document.getElementById('mensaje-rsvp'); // Asegúrate que el ID sea este en el HTML
 
-  // Convertimos asistentes a número
-  let asistentes;
-  if (asistentesRaw === "5+") {
-    asistentes = 5; // O cualquier valor que quieras para "5 o más"
-  } else {
-    asistentes = Number(asistentesRaw);
-  }
+      const nombre = nombreInput.value.trim();
+      const asistentesRaw = asistentesSelect.value;
+      const asisteRaw = asisteSelect.value;
+      const mensaje = mensajeInput ? mensajeInput.value.trim() : "";
 
-  // Convertimos asistencia a booleano (solo true/false)
-  let asiste;
-  if (asisteRaw === "si") asiste = true;
-  else if (asisteRaw === "no") asiste = false;
-  else asiste = null; // para "tal-vez" o indeciso
+      if (!nombre) {
+        nombreInput.focus();
+        alert("Por favor ingresa tu nombre");
+        return;
+      }
 
-  try {
-    const response = await fetch('https://invitacion-fiesta-personalizada.onrender.com/rsvp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, asistentes, asiste, mensaje })
+      // Convertimos asistentes a número
+      let asistentes = asistentesRaw === "5+" ? 5 : Number(asistentesRaw) || 1;
+
+      // Convertimos asistencia a booleano real para el Backend
+      let asiste = (asisteRaw === "si"); 
+
+      // Cambiar texto del botón mientras envía
+      submitBtn.innerText = "ENVIANDO...";
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch('https://invitacion-fiesta-personalizada.onrender.com/rsvp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            nombre: nombre, 
+            asistentes: asistentes, 
+            asiste: asiste, 
+            mensaje: mensaje 
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+          // Ocultar formulario y mostrar éxito
+          document.getElementById('rsvp-form-container').style.display = 'none'; 
+          const successDiv = document.getElementById('rsvpSuccess');
+          successDiv.style.display = 'block';
+          setTimeout(() => successDiv.style.opacity = '1', 50);
+        } else {
+          alert("Error: " + (data.error || "No se pudo guardar"));
+          submitBtn.innerText = "CONFIRMAR ASISTENCIA";
+          submitBtn.disabled = false;
+        }
+
+      } catch (error) {
+        console.error("Error al conectar:", error);
+        alert("Error de conexión con el servidor.");
+        submitBtn.innerText = "CONFIRMAR ASISTENCIA";
+        submitBtn.disabled = false;
+      }
     });
-
-    const data = await response.json();
-
-    if (data.ok) {
-      document.getElementById('rsvpForm').style.display = 'none';
-      const s = document.getElementById('rsvpSuccess');
-      s.style.display = 'block';
-      s.style.opacity = '0';
-      s.style.transition = 'opacity .8s';
-      setTimeout(() => s.style.opacity = '1', 50);
-    } else {
-      alert("No se pudo guardar: " + (data.detalles || "Error desconocido"));
-    }
-
-  } catch (error) {
-    console.error("Error al conectar con el servidor:", error);
-    alert("Error al conectar con el servidor");
   }
-});
-  /* ── AUDIO AUTOMÁTICO (SIN BOTÓN) ── */
+
+  /* ── AUDIO AUTOMÁTICO ── */
   const audio = document.getElementById("musica");
-
-  window.addEventListener("load", () => {
-    audio.volume = 0.5;
-    audio.muted = false;
-
-    const playPromise = audio.play();
-
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        console.log("Autoplay bloqueado");
-
-        // Se activa en el primer toque o click (invisible)
-        const activarAudio = () => {
-          audio.play();
-        };
-
-        document.addEventListener("click", activarAudio, { once: true });
-        document.addEventListener("touchstart", activarAudio, { once: true });
-      });
-    }
-  });
+  if (audio) {
+    window.addEventListener("load", () => {
+      audio.volume = 0.5;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Si el navegador bloquea el audio, se activa al primer toque
+          const activarAudio = () => { audio.play(); };
+          document.addEventListener("click", activarAudio, { once: true });
+          document.addEventListener("touchstart", activarAudio, { once: true });
+        });
+      }
+    });
+  }
 </script>
 </body>
 </html>
