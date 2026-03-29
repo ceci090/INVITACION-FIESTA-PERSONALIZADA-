@@ -837,7 +837,7 @@
   <p style="margin-top:.5rem">Con todo nuestro amor ♥</p>
 </footer>
 <script>
-  /* ── PARTICLES (Pétalos) ── */
+  /* ── 1. PARTICLES (Pétalos flotantes) ── */
   const particleContainer = document.getElementById('particles');
   if (particleContainer) {
     for (let i = 0; i < 18; i++) {
@@ -853,13 +853,16 @@
     }
   }
 
-  /* ── CAROUSEL ── */
+  /* ── 2. CAROUSEL (Galería de fotos) ── */
   const track = document.getElementById('track');
   const dotsEl = document.getElementById('dots');
+  
   if (track && dotsEl) {
-    const slides = track.querySelectorAll('.carousel-slide');
-    let current = 0, total = slides.length, timer;
+    const slides = Array.from(track.querySelectorAll('.carousel-slide'));
+    let current = 0;
+    let timer;
 
+    // Crear puntos indicadores
     slides.forEach((_, i) => {
       const d = document.createElement('div');
       d.classList.add('dot');
@@ -869,12 +872,13 @@
     });
 
     function goTo(n) {
-      current = (n + total) % total;
+      current = (n + slides.length) % slides.length;
       track.style.transform = `translateX(-${current * 100}%)`;
       const allDots = dotsEl.querySelectorAll('.dot');
       allDots.forEach((d, i) => d.classList.toggle('active', i === current));
     }
 
+    // Botones opcionales si existen en tu HTML (prev/next)
     document.getElementById('prev')?.addEventListener('click', () => { goTo(current - 1); resetTimer(); });
     document.getElementById('next')?.addEventListener('click', () => { goTo(current + 1); resetTimer(); });
 
@@ -885,95 +889,79 @@
     timer = setInterval(() => goTo(current + 1), 4000);
   }
 
-  /* ── REVEAL (Aparición al hacer scroll) ── */
+  /* ── 3. REVEAL (Efectos al bajar scroll) ── */
   const revealEls = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
   }, { threshold: .1 });
   revealEls.forEach(el => observer.observe(el));
 
-  /* ── RSVP CON BACKEND (CORREGIDO) ── */
+  /* ── 4. RSVP POR WHATSAPP (SIN ERRORES DE SERVIDOR) ── */
   const submitBtn = document.getElementById('submitBtn');
   if (submitBtn) {
-    submitBtn.addEventListener('click', async (e) => {
-      e.preventDefault(); // Evita recargas accidentales
+    submitBtn.addEventListener('click', (e) => {
+      e.preventDefault();
 
       const nombreInput = document.getElementById('nombre');
       const asistentesSelect = document.getElementById('asistentes');
       const asisteSelect = document.getElementById('asiste');
-      const mensajeInput = document.getElementById('mensaje-rsvp'); // Asegúrate que el ID sea este en el HTML
+      const mensajeInput = document.getElementById('mensaje-rsvp');
 
       const nombre = nombreInput.value.trim();
-      const asistentesRaw = asistentesSelect.value;
-      const asisteRaw = asisteSelect.value;
+      const asistentes = asistentesSelect.value;
+      const asisteStatus = asisteSelect.value === "si" ? "✅ ¡Sí confirmamos!" : "❌ No podremos ir";
       const mensaje = mensajeInput ? mensajeInput.value.trim() : "";
 
       if (!nombre) {
+        alert("Por favor, ingresa tu nombre para confirmar.");
         nombreInput.focus();
-        alert("Por favor ingresa tu nombre");
         return;
       }
 
-      // Convertimos asistentes a número
-      let asistentes = asistentesRaw === "5+" ? 5 : Number(asistentesRaw) || 1;
+      // --- CONFIGURACIÓN DE TU TELÉFONO ---
+      // Pon tu número aquí (con código de país, ej: 52 para México)
+      const miTelefono = "521234567890"; 
 
-      // Convertimos asistencia a booleano real para el Backend
-      let asiste = (asisteRaw === "si"); 
+      // Construcción del mensaje para WhatsApp
+      const texto = `¡Hola! Soy *${nombre}*.\n\n${asisteStatus} a la fiesta de Juliet Zoe.\n*Invitados:* ${asistentes}\n${mensaje ? "*Mensaje:* " + mensaje : ""}`;
+      
+      const urlWhatsapp = `https://wa.me/${miTelefono}?text=${encodeURIComponent(texto)}`;
 
-      // Cambiar texto del botón mientras envía
-      submitBtn.innerText = "ENVIANDO...";
-      submitBtn.disabled = true;
+      // Abrir WhatsApp
+      window.open(urlWhatsapp, '_blank');
 
-      try {
-        const response = await fetch('https://invitacion-fiesta-personalizada.onrender.com/rsvp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            nombre: nombre, 
-            asistentes: asistentes, 
-            asiste: asiste, 
-            mensaje: mensaje 
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.ok) {
-          // Ocultar formulario y mostrar éxito
-          document.getElementById('rsvp-form-container').style.display = 'none'; 
-          const successDiv = document.getElementById('rsvpSuccess');
-          successDiv.style.display = 'block';
-          setTimeout(() => successDiv.style.opacity = '1', 50);
-        } else {
-          alert("Error: " + (data.error || "No se pudo guardar"));
-          submitBtn.innerText = "CONFIRMAR ASISTENCIA";
-          submitBtn.disabled = false;
-        }
-
-      } catch (error) {
-        console.error("Error al conectar:", error);
-        alert("Error de conexión con el servidor.");
-        submitBtn.innerText = "CONFIRMAR ASISTENCIA";
-        submitBtn.disabled = false;
+      // Mostrar mensaje de éxito en la página
+      const formContainer = document.getElementById('rsvp-form-container');
+      const successDiv = document.getElementById('rsvpSuccess');
+      
+      if(formContainer && successDiv) {
+        formContainer.style.display = 'none';
+        successDiv.style.display = 'block';
+        setTimeout(() => successDiv.style.opacity = '1', 50);
       }
     });
   }
 
-  /* ── AUDIO AUTOMÁTICO ── */
+  /* ── 5. AUDIO (Música de fondo) ── */
   const audio = document.getElementById("musica");
   if (audio) {
-    window.addEventListener("load", () => {
+    const intentarReproducir = () => {
       audio.volume = 0.5;
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Si el navegador bloquea el audio, se activa al primer toque
-          const activarAudio = () => { audio.play(); };
-          document.addEventListener("click", activarAudio, { once: true });
-          document.addEventListener("touchstart", activarAudio, { once: true });
-        });
-      }
-    });
+      audio.play().catch(() => {
+        console.log("El navegador bloqueó el audio, esperando interacción.");
+      });
+    };
+
+    window.addEventListener("load", intentarReproducir);
+    
+    // Activar al primer toque si el navegador lo bloqueó al inicio
+    const activarAudioManual = () => { 
+      audio.play(); 
+      document.removeEventListener("click", activarAudioManual);
+      document.removeEventListener("touchstart", activarAudioManual);
+    };
+    document.addEventListener("click", activarAudioManual);
+    document.addEventListener("touchstart", activarAudioManual);
   }
 </script>
 </body>
