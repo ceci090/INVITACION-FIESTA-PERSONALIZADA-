@@ -899,64 +899,74 @@
   }, { threshold: .1 });
   revealEls.forEach(el => observer.observe(el));
 
-  /* ── 4. RSVP POR WHATSAPP (CORREGIDO Y CON MENSAJE FINAL) ── */
+ /* ── 4. RSVP POR WHATSAPP (CON LIMPIEZA TOTAL) ── */
   const submitBtn = document.getElementById('submitBtn');
   if (submitBtn) {
     submitBtn.addEventListener('click', (e) => {
       e.preventDefault();
 
+      // Referencias a los elementos
       const nombreInput = document.getElementById('nombre');
       const asistentesSelect = document.getElementById('asistentes');
       const asisteSelect = document.getElementById('asiste');
       const mensajeInput = document.getElementById('mensaje-rsvp');
 
+      // Valores
       const nombre = nombreInput.value.trim();
       const asistentes = asistentesSelect.value;
       const asisteStatus = asisteSelect.value === "si" ? "✅ ¡Sí confirmamos!" : "❌ No podremos ir";
       const mensaje = mensajeInput ? mensajeInput.value.trim() : "";
 
+      // Validación simple
       if (!nombre) {
         alert("Por favor, ingresa tu nombre para confirmar.");
         nombreInput.focus();
         return;
       }
 
+      // Configuración de WhatsApp
       const miTelefono = "5212321108813"; 
       const texto = `¡Hola! Soy *${nombre}*.\n\n${asisteStatus} a la fiesta de Juliet Zoe.\n*Invitados:* ${asistentes}\n${mensaje ? "*Mensaje:* " + mensaje : ""}`;
       const urlWhatsapp = `https://wa.me/${miTelefono}?text=${encodeURIComponent(texto)}`;
 
-      // 1. Abrimos WhatsApp
+      // 1. ABRIR WHATSAPP
       window.open(urlWhatsapp, '_blank');
 
-      // 2. Vaciamos los campos del formulario
-      nombreInput.value = "";
-      mensajeInput.value = "";
-      asistentesSelect.selectedIndex = 0;
-      asisteSelect.selectedIndex = 0;
+      // 2. VACIAR EL FORMULARIO (Limpieza inmediata)
+      // Si usas una etiqueta <form>, esto es más rápido:
+      const formElement = nombreInput.closest('form');
+      if (formElement) {
+        formElement.reset(); // Limpia todo el form de golpe
+      } else {
+        // Limpieza manual si no hay etiqueta form
+        nombreInput.value = "";
+        if (mensajeInput) mensajeInput.value = "";
+        asistentesSelect.selectedIndex = 0;
+        asisteSelect.selectedIndex = 0;
+      }
 
-      // 3. Ocultamos el formulario y mostramos el mensaje de agradecimiento
-      const formContainer = document.getElementById('rsvp-form-container'); // El contenedor del form
-      const successDiv = document.getElementById('rsvpSuccess'); // El div con el mensaje bonito
+      // 3. EFECTO VISUAL DE "GRACIAS"
+      const formContainer = document.getElementById('rsvp-form-container');
+      const successDiv = document.getElementById('rsvpSuccess');
       
       if(formContainer && successDiv) {
-        formContainer.style.transition = "opacity 0.5s ease";
+        formContainer.style.transition = "opacity 0.4s ease";
         formContainer.style.opacity = "0";
         
         setTimeout(() => {
           formContainer.style.display = 'none';
           successDiv.style.display = 'block';
-          // Personalizamos el mensaje con el nombre del invitado
           successDiv.innerHTML = `
-            <div class="success-icon">✨</div>
-            <p>¡Gracias, ${nombre}!</p>
-            <p style="font-size: 0.9rem; margin-top: 10px;">Tu confirmación ha sido enviada por WhatsApp.<br>¡Nos hace mucha ilusión verte ahí!</p>
+            <div class="success-icon" style="font-size:3rem; margin-bottom:15px;">✨</div>
+            <h3 style="color:var(--gold); font-family:'Cinzel';">¡Muchas Gracias!</h3>
+            <p style="margin-top:10px;">Tu mensaje para <b>Juliet Zoe</b> ha sido enviado.</p>
+            <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 15px;">(Ya puedes cerrar esta pestaña)</p>
           `;
           setTimeout(() => successDiv.style.opacity = '1', 50);
-        }, 500);
+        }, 400);
       }
     });
   }
-
   /* ── 5. AUDIO (Música de fondo) ── */
   const audio = document.getElementById("musica");
   if (audio) {
